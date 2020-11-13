@@ -1,19 +1,63 @@
-import React from 'react'
+import React, {useEffect, useState} from 'react'
 import {useRouteMatch, Link} from 'react-router-dom'
 import {FiChevronLeft, FiChevronRight} from 'react-icons/fi'
+import api from '../../services/api'
 
-import logoImg from "../../assets/logo.svg";
+import logoImg from "../../assets/logo.svg"
 
 import {Header, RepositoryInfo, Issues} from './styles'
 
 interface RepositoryParams {
     repository: string,
+}
+
+interface Repository {
+    full_name: string;
+    description: string;
+    stargazers_count: number;
+    forks_count: number;
+    open_issues_count: number;
+    owner: {
+        login: string;
+        avatar_url: string;
+    };
+}
+
+interface Issue {
+    id: number;
+    title: string;
+    html_url: string;
+    user: {
+        login: string;
+    }
 
 }
 
 // dizendo que o react é uma function component (padrão quando se usa Typescript)
 const Repository: React.FC = () => {
+    const [repository, setRepository] = useState<Repository | null>(null)
+    const [issues, setIssues] = useState<Issue[]>([])
     const {params} = useRouteMatch<RepositoryParams>()
+
+    useEffect(() => {
+        api.get(`repos/${params.repository}`).then(response => {
+            setRepository(response.data)
+        })
+
+        api.get(`repos/${params.repository}/issues`).then(response => {
+            setIssues(response.data)
+        })
+        // async function loadData():Promise<void> {
+        //     const repository = await api.get(`repos/${params.repository}`)
+        //     const issues = await api.get(`repos/${params.repository}/issues`)
+
+        //     console.log(repository);
+        //     console.log(issues);
+            
+        // }
+
+        // loadData()
+    }, [params.repository])
 
     return (
         <>
@@ -27,25 +71,25 @@ const Repository: React.FC = () => {
 
             <RepositoryInfo>
                 <header>
-                    <img src="https://avatars3.githubusercontent.com/u/36008926?s=460&u=93504f64ca3f549ab847b79393b03e11a752f659&v=4" alt="paaulorobson"/>
+                    <img src={repository?.owner.avatar_url} alt={repository?.owner.login}/>
                     <div>
-                        <strong>rocketseat/unform</strong>
-                        <p>descrição do repositório</p>
+                        <strong>{repository?.full_name}</strong>
+                        <p>{repository?.description}</p>
                     </div>
                 </header>
                 <ul>
                     <li>
-                        <strong>1085</strong>
+                        <strong>{repository?.stargazers_count}</strong>
                         <span>Stars</span>
                     </li>
 
                     <li>
-                        <strong>48</strong>
+                        <strong>{repository?.forks_count}</strong>
                         <span>Forks</span>
                     </li>
 
                     <li>
-                        <strong>67</strong>
+                        <strong>{repository?.open_issues_count}</strong>
                         <span>Issues abertas</span>
                     </li>
                 </ul>
@@ -53,14 +97,16 @@ const Repository: React.FC = () => {
             </RepositoryInfo>
 
             <Issues>
-                <Link to="qualquer coisa">
+                {issues.map(issue => (
+                <a key={issue.id} href={issue.html_url} target="_blank">
                     <div>
-                        <strong>qualquer coisa</strong>
-                        <p>qualquer coisa</p>
+                        <strong>{issue.title}</strong>
+                        <p>{issue.user.login}</p>
                     </div>
-        
+
                     <FiChevronRight size={20} color="#C9C9D4" />
-                </Link>
+                </a>
+                ))}
             </Issues>
         </> 
     )
